@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebShield - Website Vulnerability Scanner</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-icon">⌁</span>
+          <div>
+            <b>WebShield </b><small>Website Vulnerability Scanner</small>
+          </div>
+        </div>
+        <div class="nav-label">WORKSPACE</div>
+        <a class="nav active" href="#overview">▦ &nbsp; Overview</a
+        ><a class="nav" href="#results">⌕ &nbsp; Scan results</a
+        ><a class="nav" href="#history">◷ &nbsp; Scan history</a>
+        <div class="sidebar-bottom">
+          <span class="pulse"></span> Scanner service <b>Ready</b
+          ><small>Student project · Local mode</small>
+        </div>
+      </aside>
+      <main class="main" id="overview">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">SECURITY ANALYTICS / OVERVIEW</span>
+            <h1>Website reconnaissance</h1>
+            <p>
+              Collect domain, network, HTTP and TLS information in one report.
+            </p>
+          </div>
+          <div class="top-chip">● SYSTEM READY</div>
+        </header>
+        <section class="scan-card">
+          <div class="section-title">
+            <div>
+              <h2>Start a new scan</h2>
+              <p>
+                Enter a domain or website URL to collect technical information.
+              </p>
+            </div>
+            <span class="scan-symbol">⌁</span>
+          </div>
+          <form id="scanForm">
+            <label for="target">TARGET DOMAIN / URL</label>
+            <div class="input-row">
+              <span>⌕</span
+              ><input
+                id="target"
+                name="target"
+                placeholder="example.com or https://example.com"
+                required
+              /><button id="scanButton" type="submit">
+                Run scan <span>↗</span>
+              </button>
+            </div>
+            <div class="scan-options">
+              <label class="check-label"
+                ><input type="checkbox" id="portScan" /> Check common TCP ports
+                (authorized targets only)</label
+              ><span>DNS · HTTP · TLS · Security headers</span>
+            </div>
+          </form>
+          <div id="status" class="status" aria-live="polite">
+            Ready when you are. Enter a domain to begin.
+          </div>
+        </section>
+        <section class="metrics" id="metrics">
+          <div class="metric">
+            <span class="metric-label">RESOLVED IP ADDRESSES</span
+            ><strong id="ipMetric">—</strong
+            ><small>Public DNS resolution</small>
+          </div>
+          <div class="metric">
+            <span class="metric-label">HTTP STATUS</span
+            ><strong id="httpMetric">—</strong
+            ><small id="httpSub">Website response</small>
+          </div>
+          <div class="metric">
+            <span class="metric-label">FINDINGS</span
+            ><strong id="findingMetric">—</strong
+            ><small>Configuration observations</small>
+          </div>
+          <div class="metric">
+            <span class="metric-label">OPEN COMMON PORTS</span
+            ><strong id="portMetric">—</strong
+            ><small>When port scan is selected</small>
+          </div>
+        </section>
+        <section class="content-grid" id="results">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Scan findings</h2>
+                <p>Observed security configuration and recommendations</p>
+              </div>
+              <span class="mini-tag" id="targetTag">NO TARGET</span>
+            </div>
+            <div id="findingsList" class="empty-state">
+              Your scan findings will appear here.
+            </div>
+          </div>
+          <div class="panel chart-panel">
+            <div class="panel-head">
+              <div>
+                <h2>Severity overview</h2>
+                <p>Finding count by category</p>
+              </div>
+            </div>
+            <div class="chart-wrap"><canvas id="severityChart"></canvas></div>
+            <div class="legend">
+              <span><i class="dot high"></i>High</span
+              ><span><i class="dot medium"></i>Medium</span
+              ><span><i class="dot low"></i>Low</span
+              ><span><i class="dot info"></i>Info</span>
+            </div>
+          </div>
+        </section>
+        <section class="panel details-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Technical intelligence</h2>
+              <p>DNS records, TLS certificate and HTTP response</p>
+            </div>
+            <div class="report-actions" id="reportActions" hidden>
+              <a id="jsonLink" class="secondary-btn">Download JSON</a
+              ><a id="pdfLink" class="secondary-btn">Download PDF</a>
+            </div>
+          </div>
+          <div class="tabs">
+            <button class="tab active" data-tab="dns">DNS records</button
+            ><button class="tab" data-tab="http">HTTP headers</button
+            ><button class="tab" data-tab="tls">TLS certificate</button
+            ><button class="tab" data-tab="ports">Ports</button>
+          </div>
+          <pre id="technicalData" class="code-output">No scan data yet.</pre>
+        </section>
+        <section class="panel history-panel" id="history">
+          <div class="panel-head">
+            <div>
+              <h2>Recent scans</h2>
+              <p>Latest saved scans from this browser session's backend</p>
+            </div>
+            <button id="refreshHistory" class="secondary-btn">
+              Refresh history
+            </button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Target</th>
+                  <th>Scan time (UTC)</th>
+                  <th>Report</th>
+                </tr>
+              </thead>
+              <tbody id="historyRows">
+                {% for row in history %}
+                <tr>
+                  <td>#{{ row[0] }}</td>
+                  <td>{{ row[1] }}</td>
+                  <td>{{ row[2] }}</td>
+                  <td>
+                    <a href="/api/report/{{ row[0] }}.pdf">PDF</a> ·
+                    <a href="/api/report/{{ row[0] }}.json">JSON</a>
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="4" class="empty-table">No scans saved yet.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <footer>
+          CyberRecon Intelligence <span>·</span> Website reconnaissance and
+          configuration assessment mini-project
+        </footer>
+      </main>
+    </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
